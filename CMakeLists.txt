@@ -1,0 +1,28 @@
+cmake_minimum_required(VERSION 2.6)
+
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
+
+PROJECT(SelectCorrespondences2D3D)
+
+FIND_PACKAGE(VTK REQUIRED)
+INCLUDE(${VTK_USE_FILE})
+
+FIND_PACKAGE(Qt4 REQUIRED)
+INCLUDE(${QT_USE_FILE})
+
+FIND_PACKAGE(ITK REQUIRED)
+INCLUDE(${ITK_USE_FILE})
+
+QT4_WRAP_UI(UISrcs Form.ui)
+QT4_WRAP_CPP(MOCSrcs Form.h)
+
+ADD_EXECUTABLE(SelectCorrespondences2D3D 
+SelectCorrespondences2D3D.cpp 
+Form.cxx 
+Helpers.cpp 
+SeedCallback.cxx
+PointSelectionStyle.cpp
+${UISrcs} ${MOCSrcs} ${ResourceSrcs})
+TARGET_LINK_LIBRARIES(SelectCorrespondences2D3D QVTK ${VTK_LIBRARIES}
+${ITK_LIBRARIES})

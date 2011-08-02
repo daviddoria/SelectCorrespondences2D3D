@@ -51,8 +51,6 @@
 #include <vtkRenderer.h>
 #include <vtkRenderWindow.h>
 #include <vtkRenderWindowInteractor.h>
-#include <vtkSeedRepresentation.h>
-#include <vtkSeedWidget.h>
 #include <vtkSmartPointer.h>
 #include <vtkVertexGlyphFilter.h>
 #include <vtkXMLPolyDataReader.h>
@@ -60,7 +58,7 @@
 // Custom
 #include "Helpers.h"
 #include "Types.h"
-#include "PointSelectionStyle.h"
+
 
 // Constructor
 Form::Form()
@@ -100,15 +98,6 @@ Form::Form()
   actionSavePointCloudPoints->setIcon(saveIcon);
   this->toolBar->addAction(actionSavePointCloudPoints);
   
-  this->HandleRepresentation2D = vtkSmartPointer<vtkPointHandleRepresentation2D>::New();
-  this->HandleRepresentation2D->GetProperty()->SetColor(1,0,0);
-  this->SeedRepresentation2D = vtkSmartPointer<vtkSeedRepresentation>::New();
-  this->SeedRepresentation2D->SetHandleRepresentation(this->HandleRepresentation2D);
-  
-  this->HandleRepresentation3D = vtkSmartPointer<vtkPointHandleRepresentation2D>::New();
-  this->HandleRepresentation3D->GetProperty()->SetColor(1,0,0);
-  this->SeedRepresentation3D = vtkSmartPointer<vtkSeedRepresentation>::New();
-  this->SeedRepresentation3D->SetHandleRepresentation(this->HandleRepresentation3D);
 };
 
 void Form::on_actionOpenImage_activated()
@@ -145,24 +134,14 @@ void Form::on_actionOpenImage_activated()
   this->LeftRenderer->AddActor(this->ImageActor);
   this->LeftRenderer->ResetCamera();
 
-  vtkSmartPointer<vtkInteractorStyleImage> imageInteractorStyle =
-      vtkSmartPointer<vtkInteractorStyleImage>::New();
-  this->qvtkWidgetLeft->GetRenderWindow()->GetInteractor()->SetInteractorStyle(imageInteractorStyle);
+  vtkSmartPointer<vtkPointPicker> pointPicker = 
+    vtkSmartPointer<vtkPointPicker>::New();
+  this->qvtkWidgetLeft->GetRenderWindow()->GetInteractor()->SetPicker(pointPicker);
+  this->pointSelectionStyle2D = vtkSmartPointer<PointSelectionStyle2D>::New();
+  this->qvtkWidgetLeft->GetRenderWindow()->GetInteractor()->SetInteractorStyle(pointSelectionStyle2D);
 
   this->LeftRenderer->ResetCamera();
 
-  
-  // Seed widget
-  this->SeedWidget2D = vtkSmartPointer<vtkSeedWidget>::New();
-  this->SeedWidget2D->SetInteractor(this->qvtkWidgetRight->GetRenderWindow()->GetInteractor());
-  this->SeedWidget2D->SetRepresentation(this->SeedRepresentation2D);
-  
-  this->SeedCallback2D = vtkSmartPointer<vtkSeedCallback>::New();
-  this->SeedCallback2D->SetWidget(this->SeedWidget2D);
-  
-  this->SeedWidget2D->AddObserver(vtkCommand::PlacePointEvent,this->SeedCallback2D);
-  this->SeedWidget2D->AddObserver(vtkCommand::InteractionEvent,this->SeedCallback2D);
-  this->SeedWidget2D->On();
 }
 
 void Form::on_actionOpenPointCloud_activated()
@@ -183,6 +162,7 @@ void Form::on_actionOpenPointCloud_activated()
   
   this->PointCloudMapper->SetInputConnection(reader->GetOutputPort());
   this->PointCloudActor->SetMapper(this->PointCloudMapper);
+  this->PointCloudActor->GetProperty()->SetRepresentationToPoints();
   
   // Add Actor to renderer
   this->RightRenderer->AddActor(this->PointCloudActor);
@@ -191,31 +171,18 @@ void Form::on_actionOpenPointCloud_activated()
   vtkSmartPointer<vtkPointPicker> pointPicker = 
     vtkSmartPointer<vtkPointPicker>::New();
   this->qvtkWidgetRight->GetRenderWindow()->GetInteractor()->SetPicker(pointPicker);
-  vtkSmartPointer<PointSelectionStyle> pointSelectionStyle =
-      vtkSmartPointer<PointSelectionStyle>::New();
-  this->qvtkWidgetRight->GetRenderWindow()->GetInteractor()->SetInteractorStyle(pointSelectionStyle);
+  this->pointSelectionStyle3D = vtkSmartPointer<PointSelectionStyle3D>::New();
+  this->qvtkWidgetRight->GetRenderWindow()->GetInteractor()->SetInteractorStyle(pointSelectionStyle3D);
 
   
   this->RightRenderer->ResetCamera();
 
-  //std::cout << "Fixed interactor: " << this->qvtkWidgetLeft->GetRenderWindow()->GetInteractor() << std::endl;
-  // Seed widget
-  this->SeedWidget3D = vtkSmartPointer<vtkSeedWidget>::New();
-  this->SeedWidget3D->SetInteractor(this->qvtkWidgetLeft->GetRenderWindow()->GetInteractor());
-  this->SeedWidget3D->SetRepresentation(this->SeedRepresentation3D);
-  
-  this->SeedCallback3D = vtkSmartPointer<vtkSeedCallback>::New();
-  this->SeedCallback3D->SetWidget(this->SeedWidget3D);
-  
-  this->SeedWidget3D->AddObserver(vtkCommand::PlacePointEvent,this->SeedCallback3D);
-  this->SeedWidget3D->AddObserver(vtkCommand::InteractionEvent,this->SeedCallback3D);
-  this->SeedWidget3D->On();
 }
 
 void Form::on_actionSaveImagePoints_activated()
 {
-  if(this->SeedRepresentation2D->GetNumberOfSeeds() !=
-     this->SeedRepresentation3D->GetNumberOfSeeds())
+  if(this->pointSelectionStyle2D->Numbers.size() !=
+     this->pointSelectionStyle3D->Numbers.size())
   {
     std::cerr << "The number of fixed seeds must match the number of moving seeds!" << std::endl;
     return;
@@ -231,10 +198,10 @@ void Form::on_actionSaveImagePoints_activated()
 
   std::ofstream fout(fileName.toStdString().c_str());
  
-  for(vtkIdType i = 0; i < this->SeedRepresentation2D->GetNumberOfSeeds(); i++)
+  for(unsigned int i = 0; i < this->pointSelectionStyle2D->Numbers.size(); i++)
     {
     double p[3];
-    this->SeedRepresentation2D->GetSeedDisplayPosition(i, p);
+    this->pointSelectionStyle2D->Numbers[i]->GetPosition(p);
   
     fout << p[0] << " " << p[1] << std::endl;
  
@@ -244,8 +211,8 @@ void Form::on_actionSaveImagePoints_activated()
 
 void Form::on_actionSavePointCloudPoints_activated()
 {
-  if(this->SeedRepresentation2D->GetNumberOfSeeds() !=
-     this->SeedRepresentation3D->GetNumberOfSeeds())
+  if(this->pointSelectionStyle2D->Numbers.size() !=
+     this->pointSelectionStyle3D->Numbers.size())
   {
     std::cerr << "The number of fixed seeds must match the number of moving seeds!" << std::endl;
     return;
@@ -261,10 +228,10 @@ void Form::on_actionSavePointCloudPoints_activated()
     
   std::ofstream fout(fileName.toStdString().c_str());
  
-  for(vtkIdType i = 0; i < this->SeedRepresentation3D->GetNumberOfSeeds(); i++)
+  for(unsigned int i = 0; i < this->pointSelectionStyle3D->Numbers.size(); i++)
     {
     double p[3];
-    this->SeedRepresentation3D->GetSeedDisplayPosition(i, p);
+    this->pointSelectionStyle3D->Numbers[i]->GetPosition(p);
   
     fout << p[0] << " " << p[1] << " " << p[2] << std::endl;
  

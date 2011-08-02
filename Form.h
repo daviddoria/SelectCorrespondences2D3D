@@ -35,6 +35,8 @@
 // Custom
 #include "Types.h"
 #include "SeedCallback.h"
+#include "PointSelectionStyle2D.h"
+#include "PointSelectionStyle3D.h"
 
 // Forward declarations
 class vtkActor;
@@ -75,17 +77,8 @@ protected:
   vtkSmartPointer<vtkPolyDataMapper> PointCloudMapper;
   vtkSmartPointer<vtkPolyData> PointCloud;
   
-  vtkSmartPointer<vtkSeedWidget> SeedWidget2D;
-  vtkSmartPointer<vtkSeedWidget> SeedWidget3D;
-
-  vtkSmartPointer<vtkSeedCallback> SeedCallback2D;
-  vtkSmartPointer<vtkSeedCallback> SeedCallback3D;
-
-  vtkSmartPointer<vtkPointHandleRepresentation2D> HandleRepresentation2D;
-  vtkSmartPointer<vtkSeedRepresentation> SeedRepresentation2D;
-  
-  vtkSmartPointer<vtkPointHandleRepresentation2D> HandleRepresentation3D;
-  vtkSmartPointer<vtkSeedRepresentation> SeedRepresentation3D;
+  vtkSmartPointer<PointSelectionStyle2D> pointSelectionStyle2D;
+  vtkSmartPointer<PointSelectionStyle3D> pointSelectionStyle3D;
 };
 
 #endif // Form_H

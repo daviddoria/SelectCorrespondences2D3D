@@ -21,8 +21,9 @@ ADD_EXECUTABLE(SelectCorrespondences2D3D
 SelectCorrespondences2D3D.cpp 
 Form.cxx 
 Helpers.cpp 
-SeedCallback.cxx
-PointSelectionStyle.cpp
+SeedCallback.cxx 
+PointSelectionStyle2D.cpp
+PointSelectionStyle3D.cpp
 ${UISrcs} ${MOCSrcs} ${ResourceSrcs})
 TARGET_LINK_LIBRARIES(SelectCorrespondences2D3D QVTK ${VTK_LIBRARIES}
 ${ITK_LIBRARIES})

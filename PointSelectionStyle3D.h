@@ -16,20 +16,23 @@
  *
  *=========================================================================*/
 
-#ifndef PointSelectionStyle_H
-#define PointSelectionStyle_H
+#ifndef PointSelectionStyle3D_H
+#define PointSelectionStyle3D_H
 
 #include <vtkInteractorStyleTrackballCamera.h>
 
+#include <vector>
+
 // Define interaction style
-class PointSelectionStyle : public vtkInteractorStyleTrackballCamera
+class PointSelectionStyle3D : public vtkInteractorStyleTrackballCamera
 {
   public:
-    static PointSelectionStyle* New();
-    vtkTypeMacro(PointSelectionStyle, vtkInteractorStyleTrackballCamera);
+    static PointSelectionStyle3D* New();
+    vtkTypeMacro(PointSelectionStyle3D, vtkInteractorStyleTrackballCamera);
  
     void OnLeftButtonDown() ;
  
+    std::vector<vtkActor*> Numbers;
 };
 
 #endif

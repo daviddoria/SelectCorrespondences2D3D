@@ -33,6 +33,10 @@ class PointSelectionStyle2D : public vtkInteractorStyleImage
     void OnLeftButtonDown() ;
  
     std::vector<vtkActor*> Numbers;
+
+    void AddNumber(double p[3]);
+
+    void RemoveAllPoints();
 };
 
 #endif

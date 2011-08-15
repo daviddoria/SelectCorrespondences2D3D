@@ -25,8 +25,6 @@
 #include "itkImageFileWriter.h"
 #include "itkRegionOfInterestImageFilter.h"
 #include "itkVector.h"
-#include "itkDeformationFieldSource.h"
-#include "itkDeformationFieldTransform.h"
 
 // Qt
 #include <QFileDialog>
@@ -34,6 +32,7 @@
 
 // VTK
 #include <vtkActor.h>
+#include <vtkCamera.h>
 #include <vtkCommand.h>
 #include <vtkDataSetSurfaceFilter.h>
 #include <vtkImageActor.h>
@@ -68,37 +67,109 @@ Form::Form()
   this->LeftRenderer = vtkSmartPointer<vtkRenderer>::New();
   this->RightRenderer = vtkSmartPointer<vtkRenderer>::New();
 
-  std::cout << "Left renderer: " << this->LeftRenderer << std::endl;
-  std::cout << "Right renderer: " << this->RightRenderer << std::endl;
-  
   this->qvtkWidgetLeft->GetRenderWindow()->AddRenderer(this->LeftRenderer);
   this->qvtkWidgetRight->GetRenderWindow()->AddRenderer(this->RightRenderer);
 
   // Setup image
   this->ImageActor = vtkSmartPointer<vtkImageActor>::New();
   this->ImageData = vtkSmartPointer<vtkImageData>::New();
-  
+
   // Setup point cloud
   this->PointCloudActor = vtkSmartPointer<vtkActor>::New();
   this->PointCloudMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
   this->PointCloud = vtkSmartPointer<vtkPolyData>::New();
-  
+
   // Setup toolbar
+  // Open file buttons
   QIcon openIcon = QIcon::fromTheme("document-open");
   actionOpenImage->setIcon(openIcon);
   this->toolBar->addAction(actionOpenImage);
-  
+
   actionOpenPointCloud->setIcon(openIcon);
   this->toolBar->addAction(actionOpenPointCloud);
-  
+
+  // Save buttons
   QIcon saveIcon = QIcon::fromTheme("document-save");
   actionSaveImagePoints->setIcon(saveIcon);
   this->toolBar->addAction(actionSaveImagePoints);
-    
+
   actionSavePointCloudPoints->setIcon(saveIcon);
   this->toolBar->addAction(actionSavePointCloudPoints);
-  
+
+  // Open points buttons
+  actionLoad2DPoints->setIcon(openIcon);
+  this->toolBar->addAction(actionLoad2DPoints);
+
+  actionLoad3DPoints->setIcon(openIcon);
+  this->toolBar->addAction(actionLoad3DPoints);
 };
+
+
+void Form::on_actionLoad2DPoints_activated()
+{
+   // Get a filename to open
+  QString fileName = QFileDialog::getOpenFileName(this, "Open File", ".", "Text Files (*.txt)");
+
+  std::cout << "Got filename: " << fileName.toStdString() << std::endl;
+  if(fileName.toStdString().empty())
+    {
+    std::cout << "Filename was empty." << std::endl;
+    return;
+    }
+
+  std::string line;
+  std::ifstream fin(fileName.toStdString().c_str());
+
+  if(fin == NULL)
+  {
+    std::cout << "Cannot open file." << std::endl;
+  }
+
+  pointSelectionStyle2D->RemoveAllPoints();
+  
+  while(getline(fin, line))
+    {
+    std::stringstream ss;
+    ss << line;
+    double p[3];
+    ss >> p[0] >> p[1];
+    p[2] = 0;
+  
+    pointSelectionStyle2D->AddNumber(p);
+    }
+}
+
+void Form::on_actionLoad3DPoints_activated()
+{
+   // Get a filename to open
+  QString fileName = QFileDialog::getOpenFileName(this, "Open File", ".", "Text Files (*.txt)");
+
+  std::cout << "Got filename: " << fileName.toStdString() << std::endl;
+  if(fileName.toStdString().empty())
+    {
+    std::cout << "Filename was empty." << std::endl;
+    return;
+    }
+
+  std::string line;
+  std::ifstream fin(fileName.toStdString().c_str());
+
+  if(fin == NULL)
+  {
+    std::cout << "Cannot open file." << std::endl;
+  }
+
+  pointSelectionStyle3D->RemoveAllPoints();
+
+  while(getline(fin, line))
+    {
+    std::stringstream ss;
+    ss << line;
+    double p[3];
+    ss >> p[0] >> p[1] >> p[2];
+    pointSelectionStyle3D->AddNumber(p);
+    }
+}
 
 void Form::on_actionOpenImage_activated()
 {
@@ -134,14 +205,38 @@ void Form::on_actionOpenImage_activated()
   this->LeftRenderer->AddActor(this->ImageActor);
   this->LeftRenderer->ResetCamera();
 
-  vtkSmartPointer<vtkPointPicker> pointPicker = 
-    vtkSmartPointer<vtkPointPicker>::New();
+  vtkSmartPointer<vtkPointPicker> pointPicker = vtkSmartPointer<vtkPointPicker>::New();
   this->qvtkWidgetLeft->GetRenderWindow()->GetInteractor()->SetPicker(pointPicker);
   this->pointSelectionStyle2D = vtkSmartPointer<PointSelectionStyle2D>::New();
   this->qvtkWidgetLeft->GetRenderWindow()->GetInteractor()->SetInteractorStyle(pointSelectionStyle2D);
 
   this->LeftRenderer->ResetCamera();
 
+  // Flip the image by changing the camera view up because of the conflicting conventions used by ITK and VTK
+  //this->LeftRenderer = vtkSmartPointer<vtkRenderer>::New();
+  //this->LeftRenderer->GradientBackgroundOn();
+  //this->LeftRenderer->SetBackground(this->BackgroundColor);
+  //this->LeftRenderer->SetBackground2(1,1,1);
+
+  double cameraUp[3];
+  cameraUp[0] = 0;
+  cameraUp[1] = -1;
+  cameraUp[2] = 0;
+  this->LeftRenderer->GetActiveCamera()->SetViewUp(cameraUp);
+
+  double cameraPosition[3];
+  this->LeftRenderer->GetActiveCamera()->GetPosition(cameraPosition);
+  std::cout << cameraPosition[0] << " " << cameraPosition[1] << " " << cameraPosition[2] << std::endl;
+  //cameraPosition[0] *= -1;
+  //cameraPosition[1] *= -1;
+  cameraPosition[2] *= -1;
+  this->LeftRenderer->GetActiveCamera()->SetPosition(cameraPosition);
+
+  // Verify
+  this->LeftRenderer->GetActiveCamera()->GetPosition(cameraPosition);
+  std::cout << cameraPosition[0] << " " << cameraPosition[1] << " " << cameraPosition[2] << std::endl;
+  
+  this->qvtkWidgetLeft->GetRenderWindow()->Render();
 }
 
 void Form::on_actionOpenPointCloud_activated()

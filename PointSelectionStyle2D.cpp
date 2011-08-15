@@ -43,28 +43,46 @@ void PointSelectionStyle2D::OnLeftButtonDown()
   double picked[3];
   this->Interactor->GetPicker()->GetPickPosition(picked);
   //std::cout << "Picked point with coordinate: " << picked[0] << " " << picked[1] << " " << picked[2] << std::endl;
+
+  AddNumber(picked);
   
-  std::stringstream ss;
-  ss << Numbers.size();
-  vtkSmartPointer<vtkVectorText> textSource = 
-    vtkSmartPointer<vtkVectorText>::New();
-  textSource->SetText( ss.str().c_str() );
-   
-  // Create a mapper
-  vtkSmartPointer<vtkPolyDataMapper> mapper = vtkSmartPointer<vtkPolyDataMapper>::New();
-  mapper->SetInputConnection( textSource->GetOutputPort() );
- 
-  // Create a subclass of vtkActor: a vtkFollower that remains facing the camera
-  vtkSmartPointer<vtkFollower> follower = vtkSmartPointer<vtkFollower>::New();
-  follower->SetMapper( mapper );
-  picked[2] = 1; // so it is a little bit in front of the image
-  follower->SetPosition(picked);
-  follower->GetProperty()->SetColor( 1, 0, 0 ); // red
-  follower->SetScale( 10, 10, 10 );
- 
-  this->Numbers.push_back(follower);
-  this->Interactor->GetRenderWindow()->GetRenderers()->GetFirstRenderer()->AddActor( follower );
+  
   
   // Forward events
   vtkInteractorStyleImage::OnLeftButtonDown();
+}
+
+void PointSelectionStyle2D::RemoveAllPoints()
+{
+  for(unsigned int i = 0; i < Numbers.size(); ++i)
+    {
+    this->Interactor->GetRenderWindow()->GetRenderers()->GetFirstRenderer()->RemoveActor( Numbers[i]);
+    }
+  Numbers.clear();
+}
+
+
+void PointSelectionStyle2D::AddNumber(double p[3])
+{
+
+  std::stringstream ss;
+  ss << Numbers.size();
+  vtkSmartPointer<vtkVectorText> textSource = vtkSmartPointer<vtkVectorText>::New();
+  textSource->SetText( ss.str().c_str() );
+
+  // Create a mapper
+  vtkSmartPointer<vtkPolyDataMapper> mapper = vtkSmartPointer<vtkPolyDataMapper>::New();
+  mapper->SetInputConnection( textSource->GetOutputPort() );
+
+  // Create a subclass of vtkActor: a vtkFollower that remains facing the camera
+  vtkSmartPointer<vtkFollower> follower = vtkSmartPointer<vtkFollower>::New();
+  follower->SetMapper( mapper );
+  //picked[2] = 1; // so it is a little bit in front of the image
+  p[2] = -1; // so it is a little bit in front of the image (the sign should be set based on the position of the camera)
+  follower->SetPosition(p);
+  follower->GetProperty()->SetColor( 1, 0, 0 ); // red
+  follower->SetScale( 10, 10, 10 );
+
+  this->Numbers.push_back(follower);
+  this->Interactor->GetRenderWindow()->GetRenderers()->GetFirstRenderer()->AddActor( follower );
 }

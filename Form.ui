@@ -20,6 +20,9 @@
       <property name="text">
        <string>Interpret images as RGB</string>
       </property>
+      <property name="checked">
+       <bool>true</bool>
+      </property>
      </widget>
     </item>
     <item row="0" column="0">
@@ -47,10 +50,10 @@
         <item>
          <layout class="QHBoxLayout" name="horizontalLayout_2">
           <item>
-           <widget class="QVTKWidget" name="qvtkWidgetLeft" native="true"/>
+           <widget class="QVTKWidget" name="qvtkWidgetLeft"/>
           </item>
           <item>
-           <widget class="QVTKWidget" name="qvtkWidgetRight" native="true"/>
+           <widget class="QVTKWidget" name="qvtkWidgetRight"/>
           </item>
          </layout>
         </item>
@@ -58,10 +61,17 @@
       </item>
      </layout>
     </item>
-    <item row="3" column="0">
+    <item row="4" column="0">
      <widget class="QPushButton" name="btnRegister">
       <property name="text">
        <string>Register</string>
+      </property>
+     </widget>
+    </item>
+    <item row="3" column="0">
+     <widget class="QCheckBox" name="chkFlipImage">
+      <property name="text">
+       <string>Flip Image</string>
       </property>
      </widget>
     </item>
@@ -73,7 +83,7 @@
      <x>0</x>
      <y>0</y>
      <width>800</width>
-     <height>25</height>
+     <height>24</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -84,6 +94,8 @@
     <addaction name="actionOpenPointCloud"/>
     <addaction name="actionSaveImagePoints"/>
     <addaction name="actionSavePointCloudPoints"/>
+    <addaction name="actionLoad2DPoints"/>
+    <addaction name="actionLoad3DPoints"/>
    </widget>
    <addaction name="menuFile"/>
   </widget>
@@ -117,6 +129,16 @@
   <action name="actionOpenPointCloud">
    <property name="text">
     <string>Open Point Cloud</string>
+   </property>
+  </action>
+  <action name="actionLoad2DPoints">
+   <property name="text">
+    <string>Load 2D Points</string>
+   </property>
+  </action>
+  <action name="actionLoad3DPoints">
+   <property name="text">
+    <string>Load 3D Points</string>
    </property>
   </action>
  </widget>

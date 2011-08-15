@@ -61,6 +61,8 @@ public slots:
   void on_actionOpenPointCloud_activated();
   void on_actionSaveImagePoints_activated();
   void on_actionSavePointCloudPoints_activated();
+  void on_actionLoad2DPoints_activated();
+  void on_actionLoad3DPoints_activated();
 
 protected:
 

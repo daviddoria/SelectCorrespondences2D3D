@@ -27,6 +27,7 @@
 #include <vtkRenderWindow.h>
 #include <vtkRenderWindowInteractor.h>
 #include <vtkSmartPointer.h>
+#include <vtkSphereSource.h>
 #include <vtkVectorText.h>
 
 #include <sstream>
@@ -62,12 +63,15 @@ void PointSelectionStyle3D::RemoveAllPoints()
   for(unsigned int i = 0; i < Numbers.size(); ++i)
     {
     this->Interactor->GetRenderWindow()->GetRenderers()->GetFirstRenderer()->RemoveActor( Numbers[i]);
+    this->Interactor->GetRenderWindow()->GetRenderers()->GetFirstRenderer()->RemoveActor( Points[i]);
     }
   Numbers.clear();
+  Points.clear();
 }
 
 void PointSelectionStyle3D::AddNumber(double p[3])
 {
+  // Create the TEXT
   std::stringstream ss;
   ss << Numbers.size();
   vtkSmartPointer<vtkVectorText> textSource = vtkSmartPointer<vtkVectorText>::New();
@@ -80,10 +84,30 @@ void PointSelectionStyle3D::AddNumber(double p[3])
   // Create a subclass of vtkActor: a vtkFollower that remains facing the camera
   vtkSmartPointer<vtkFollower> follower = vtkSmartPointer<vtkFollower>::New();
   follower->SetMapper( mapper );
+  follower->SetCamera(this->Interactor->GetRenderWindow()->GetRenderers()->GetFirstRenderer()->GetActiveCamera());
   follower->SetPosition(p);
   follower->GetProperty()->SetColor( 1, 0, 0 ); // red
   follower->SetScale( .1, .1, .1 );
 
   this->Numbers.push_back(follower);
   this->Interactor->GetRenderWindow()->GetRenderers()->GetFirstRenderer()->AddActor( follower );
+
+  // Create the dot
+  // Create a sphere
+  vtkSmartPointer<vtkSphereSource> sphereSource = vtkSmartPointer<vtkSphereSource>::New();
+  sphereSource->SetRadius(.5);
+  sphereSource->SetCenter(p);
+  sphereSource->Update();
+
+  // Create a mapper
+  vtkSmartPointer<vtkPolyDataMapper> sphereMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
+  sphereMapper->SetInputConnection( sphereSource->GetOutputPort() );
+
+  // Create a subclass of vtkActor: a vtkFollower that remains facing the camera
+  vtkSmartPointer<vtkActor> sphereActor = vtkSmartPointer<vtkActor>::New();
+  sphereActor->SetMapper( sphereMapper );
+  sphereActor->GetProperty()->SetColor( 1, 0, 0 ); // red
+
+  this->Points.push_back(sphereActor);
+  this->Interactor->GetRenderWindow()->GetRenderers()->GetFirstRenderer()->AddActor( sphereActor );
 }

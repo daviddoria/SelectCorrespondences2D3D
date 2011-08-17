@@ -30,13 +30,16 @@ class PointSelectionStyle2D : public vtkInteractorStyleImage
     static PointSelectionStyle2D* New();
     vtkTypeMacro(PointSelectionStyle2D, vtkInteractorStyleTrackballCamera);
  
-    void OnLeftButtonDown() ;
+    void OnLeftButtonDown();
+    void OnRightButtonUp();
  
     std::vector<vtkActor*> Numbers;
+    std::vector<vtkActor*> Points;
 
     void AddNumber(double p[3]);
 
     void RemoveAllPoints();
+    void RefreshNumbers();
 };
 
 #endif

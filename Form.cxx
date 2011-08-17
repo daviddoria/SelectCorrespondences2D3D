@@ -200,7 +200,8 @@ void Form::on_actionOpenImage_activated()
     }
   
   this->ImageActor->SetInput(this->ImageData);
-
+  this->ImageActor->InterpolateOff();
+  
   // Add Actor to renderer
   this->LeftRenderer->AddActor(this->ImageActor);
   this->LeftRenderer->ResetCamera();

@@ -33,6 +33,7 @@ class PointSelectionStyle3D : public vtkInteractorStyleTrackballCamera
     void OnLeftButtonDown() ;
  
     std::vector<vtkActor*> Numbers;
+    std::vector<vtkActor*> Points;
 
     void AddNumber(double p[3]);
 

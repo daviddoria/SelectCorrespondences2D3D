@@ -28,7 +28,7 @@ namespace Helpers
 // Convert a vector ITK image to a VTK image for display
 void ITKImagetoVTKImage(FloatVectorImageType::Pointer image, vtkImageData* outputImage)
 {
-  std::cout << "ITKImagetoVTKImage()" << std::endl;
+  //std::cout << "ITKImagetoVTKImage()" << std::endl;
   if(image->GetNumberOfComponentsPerPixel() >= 3)
     {
     ITKImagetoVTKRGBImage(image, outputImage);
@@ -44,7 +44,7 @@ void ITKImagetoVTKRGBImage(FloatVectorImageType::Pointer image, vtkImageData* ou
 {
   // This function assumes an ND (with N>3) image has the first 3 channels as RGB and extra information in the remaining channels.
   
-  std::cout << "ITKImagetoVTKRGBImage()" << std::endl;
+  //std::cout << "ITKImagetoVTKRGBImage()" << std::endl;
   if(image->GetNumberOfComponentsPerPixel() < 3)
     {
     std::cerr << "The input image has " << image->GetNumberOfComponentsPerPixel() << " components, but at least 3 are required." << std::endl;
@@ -81,7 +81,7 @@ void ITKImagetoVTKRGBImage(FloatVectorImageType::Pointer image, vtkImageData* ou
 // Convert a vector ITK image to a VTK image for display
 void ITKImagetoVTKMagnitudeImage(FloatVectorImageType::Pointer image, vtkImageData* outputImage)
 {
-  std::cout << "ITKImagetoVTKMagnitudeImage()" << std::endl;
+  //std::cout << "ITKImagetoVTKMagnitudeImage()" << std::endl;
   // Compute the magnitude of the ITK image
   typedef itk::VectorMagnitudeImageFilter<
                   FloatVectorImageType, FloatScalarImageType >  VectorMagnitudeFilterType;

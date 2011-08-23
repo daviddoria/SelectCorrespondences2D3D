@@ -29,6 +29,7 @@
 // Qt
 #include <QFileDialog>
 #include <QIcon>
+#include <QTextEdit>
 
 // VTK
 #include <vtkActor.h>
@@ -61,6 +62,22 @@
 #include "Helpers.h"
 #include "Types.h"
 
+void Form::on_actionHelp_activated()
+{
+  QTextEdit* help=new QTextEdit();
+  //help->setWindowFlag(Qt::Window); //or Qt::Tool, Qt::Dialog if you like
+  help->setReadOnly(true);
+  help->append("<h1>Image keypoints</h1>Hold the right mouse button and drag to zoom in and out. <br/>Hold the middle mouse button and drag to pan the image. <br/>Click the left mouse button to select a keypoint.<br/> <p/>\
+  <h1>Point cloud keypoints</h1> Hold the left mouse button and drag to rotate the scene.<br/> Hold the right mouse button and drag to zoom in and out. Hold the middle mouse button and drag to pan the scene. While holding control (CTRL), click the left mouse button to select a keypoint.\
+  <h1>Saving keypoints</h1> The same number of keypoints must be selected in both the image and the point cloud before the points can be saved."
+  );
+  help->show();
+}
+
+void Form::on_actionQuit_activated()
+{
+  exit(0);
+}
 
 // Constructor
 Form::Form()
@@ -86,25 +103,28 @@ Form::Form()
   // Open file buttons
   QIcon openIcon = QIcon::fromTheme("document-open");
   actionOpenImage->setIcon(openIcon);
-  this->toolBar->addAction(actionOpenImage);
+  this->toolBar_image->addAction(actionOpenImage);
 
   actionOpenPointCloud->setIcon(openIcon);
-  this->toolBar->addAction(actionOpenPointCloud);
+  this->toolBar_pointcloud->addAction(actionOpenPointCloud);
 
   // Save buttons
   QIcon saveIcon = QIcon::fromTheme("document-save");
   actionSaveImagePoints->setIcon(saveIcon);
-  this->toolBar->addAction(actionSaveImagePoints);
+  this->toolBar_image->addAction(actionSaveImagePoints);
 
   actionSavePointCloudPoints->setIcon(saveIcon);
-  this->toolBar->addAction(actionSavePointCloudPoints);
+  this->toolBar_pointcloud->addAction(actionSavePointCloudPoints);
 
   // Open points buttons
   actionLoad2DPoints->setIcon(openIcon);
-  this->toolBar->addAction(actionLoad2DPoints);
+  this->toolBar_image->addAction(actionLoad2DPoints);
 
   actionLoad3DPoints->setIcon(openIcon);
-  this->toolBar->addAction(actionLoad3DPoints);
+  this->toolBar_pointcloud->addAction(actionLoad3DPoints);
+
+  this->pointSelectionStyle2D = NULL;
+  this->pointSelectionStyle3D = NULL;
 };
 
 
@@ -212,6 +232,7 @@ void Form::on_actionOpenImage_activated()
   vtkSmartPointer<vtkPointPicker> pointPicker = vtkSmartPointer<vtkPointPicker>::New();
   this->qvtkWidgetLeft->GetRenderWindow()->GetInteractor()->SetPicker(pointPicker);
   this->pointSelectionStyle2D = vtkSmartPointer<PointSelectionStyle2D>::New();
+  this->pointSelectionStyle2D->SetCurrentRenderer(this->LeftRenderer);
   this->qvtkWidgetLeft->GetRenderWindow()->GetInteractor()->SetInteractorStyle(pointSelectionStyle2D);
 
   this->LeftRenderer->ResetCamera();
@@ -230,7 +251,7 @@ void Form::on_actionOpenImage_activated()
 
   double cameraPosition[3];
   this->LeftRenderer->GetActiveCamera()->GetPosition(cameraPosition);
-  std::cout << cameraPosition[0] << " " << cameraPosition[1] << " " << cameraPosition[2] << std::endl;
+  //std::cout << cameraPosition[0] << " " << cameraPosition[1] << " " << cameraPosition[2] << std::endl;
   //cameraPosition[0] *= -1;
   //cameraPosition[1] *= -1;
   cameraPosition[2] *= -1;
@@ -238,7 +259,7 @@ void Form::on_actionOpenImage_activated()
 
   // Verify
   this->LeftRenderer->GetActiveCamera()->GetPosition(cameraPosition);
-  std::cout << cameraPosition[0] << " " << cameraPosition[1] << " " << cameraPosition[2] << std::endl;
+  //std::cout << cameraPosition[0] << " " << cameraPosition[1] << " " << cameraPosition[2] << std::endl;
   
   this->qvtkWidgetLeft->GetRenderWindow()->Render();
 }
@@ -280,10 +301,12 @@ void Form::on_actionOpenPointCloud_activated()
   this->RightRenderer->ResetCamera();
 
   vtkSmartPointer<vtkPointPicker> pointPicker = vtkSmartPointer<vtkPointPicker>::New();
+  
   pointPicker->PickFromListOn();
   pointPicker->AddPickList(this->PointCloudActor);
   this->qvtkWidgetRight->GetRenderWindow()->GetInteractor()->SetPicker(pointPicker);
   this->pointSelectionStyle3D = vtkSmartPointer<PointSelectionStyle3D>::New();
+  this->pointSelectionStyle3D->SetCurrentRenderer(this->RightRenderer);
   this->pointSelectionStyle3D->Data = reader->GetOutput();
   this->qvtkWidgetRight->GetRenderWindow()->GetInteractor()->SetInteractorStyle(pointSelectionStyle3D);
 
@@ -294,6 +317,12 @@ void Form::on_actionOpenPointCloud_activated()
 
 void Form::on_actionSaveImagePoints_activated()
 {
+  if(!this->pointSelectionStyle2D || !this->pointSelectionStyle3D)
+    {
+    std::cerr << "You must have loaded and selected points from both the image and the corresponding point cloud!" << std::endl;
+    return;
+    }
+  
   if(this->pointSelectionStyle2D->Numbers.size() !=
      this->pointSelectionStyle3D->Numbers.size())
   {
@@ -311,7 +340,7 @@ void Form::on_actionSaveImagePoints_activated()
 
   std::ofstream fout(fileName.toStdString().c_str());
  
-  for(unsigned int i = 0; i < this->pointSelectionStyle2D->Numbers.size(); i++)
+  for(unsigned int i = 0; i < this->pointSelectionStyle2D->Coordinates.size(); i++)
     {
     //double p[3];
     //this->pointSelectionStyle2D->Numbers[i]->GetPosition(p);
@@ -324,6 +353,12 @@ void Form::on_actionSaveImagePoints_activated()
 
 void Form::on_actionSavePointCloudPoints_activated()
 {
+  if(!this->pointSelectionStyle2D || !this->pointSelectionStyle3D)
+    {
+    std::cerr << "You must have loaded and selected points from both the image and the corresponding point cloud!" << std::endl;
+    return;
+    }
+    
   if(this->pointSelectionStyle2D->Numbers.size() !=
      this->pointSelectionStyle3D->Numbers.size())
   {
@@ -343,11 +378,47 @@ void Form::on_actionSavePointCloudPoints_activated()
  
   for(unsigned int i = 0; i < this->pointSelectionStyle3D->Numbers.size(); i++)
     {
+    /*
     double p[3];
     this->pointSelectionStyle3D->Numbers[i]->GetPosition(p);
   
     fout << p[0] << " " << p[1] << " " << p[2] << std::endl;
- 
+    */
+    fout << this->pointSelectionStyle3D->Coordinates[i].x << " "
+         << this->pointSelectionStyle3D->Coordinates[i].y << " "
+         << this->pointSelectionStyle3D->Coordinates[i].z << std::endl;
     }
   fout.close();
+}
+
+void Form::on_btnDeleteLastImageKeypoint_clicked()
+{
+  this->LeftRenderer->RemoveViewProp( this->pointSelectionStyle2D->Numbers[this->pointSelectionStyle2D->Numbers.size() - 1]);
+  this->LeftRenderer->RemoveViewProp( this->pointSelectionStyle2D->Points[this->pointSelectionStyle2D->Points.size() - 1]);
+  this->pointSelectionStyle2D->Numbers.erase(this->pointSelectionStyle2D->Numbers.end()-1);
+  this->pointSelectionStyle2D->Points.erase(this->pointSelectionStyle2D->Points.end()-1);
+  this->pointSelectionStyle2D->Coordinates.erase(this->pointSelectionStyle2D->Coordinates.end()-1);
+  this->qvtkWidgetLeft->GetRenderWindow()->Render();
+}
+
+void Form::on_btnDeleteAllImageKeypoints_clicked()
+{
+  this->pointSelectionStyle2D->RemoveAllPoints();
+  this->qvtkWidgetLeft->GetRenderWindow()->Render();
+}
+
+void Form::on_btnDeleteLastPointcloudKeypoint_clicked()
+{
+  this->RightRenderer->RemoveViewProp( this->pointSelectionStyle3D->Numbers[this->pointSelectionStyle3D->Numbers.size() - 1]);
+  this->RightRenderer->RemoveViewProp( this->pointSelectionStyle3D->Points[this->pointSelectionStyle3D->Points.size() - 1]);
+  this->pointSelectionStyle3D->Numbers.erase(this->pointSelectionStyle3D->Numbers.end()-1);
+  this->pointSelectionStyle3D->Points.erase(this->pointSelectionStyle3D->Points.end()-1);
+  this->pointSelectionStyle3D->Coordinates.erase(this->pointSelectionStyle3D->Coordinates.end()-1);
+  this->qvtkWidgetRight->GetRenderWindow()->Render();
+}
+
+void Form::on_btnDeleteAllPointcloudKeypoints_clicked()
+{
+  this->pointSelectionStyle3D->RemoveAllPoints();
+  this->qvtkWidgetRight->GetRenderWindow()->Render();
 }

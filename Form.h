@@ -63,7 +63,13 @@ public slots:
   void on_actionSavePointCloudPoints_activated();
   void on_actionLoad2DPoints_activated();
   void on_actionLoad3DPoints_activated();
-
+  void on_actionHelp_activated();
+  void on_actionQuit_activated();
+  void on_btnDeleteLastImageKeypoint_clicked();
+  void on_btnDeleteAllImageKeypoints_clicked();
+  void on_btnDeleteLastPointcloudKeypoint_clicked();
+  void on_btnDeleteAllPointcloudKeypoints_clicked();
+  
 protected:
 
   vtkSmartPointer<vtkRenderer> LeftRenderer;

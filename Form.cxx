@@ -32,12 +32,15 @@
 
 // VTK
 #include <vtkActor.h>
+#include <vtkActor2D.h>
 #include <vtkCamera.h>
 #include <vtkCommand.h>
 #include <vtkDataSetSurfaceFilter.h>
+#include <vtkFloatArray.h>
 #include <vtkImageActor.h>
 #include <vtkImageData.h>
 #include <vtkInteractorStyleImage.h>
+#include <vtkLookupTable.h>
 #include <vtkMath.h>
 #include <vtkPointData.h>
 #include <vtkPointPicker.h>
@@ -255,8 +258,20 @@ void Form::on_actionOpenPointCloud_activated()
   vtkSmartPointer<vtkXMLPolyDataReader> reader = vtkSmartPointer<vtkXMLPolyDataReader>::New();
   reader->SetFileName(fileName.toStdString().c_str());
   reader->Update();
+  reader->GetOutput()->GetPointData()->SetActiveScalars("Intensity");
+
+  float range[2];
+  vtkFloatArray::SafeDownCast(reader->GetOutput()->GetPointData()->GetArray("Intensity"))->GetValueRange(range);
+  
+  vtkSmartPointer<vtkLookupTable> lookupTable = vtkSmartPointer<vtkLookupTable>::New();
+  //lookupTable->SetTableRange(0.0, 10.0);
+  lookupTable->SetTableRange(range[0], range[1]);
+  //lookupTable->SetHueRange(0, .5);
+  //lookupTable->SetHueRange(.5, 1);
+  lookupTable->SetHueRange(0, 1);
   
   this->PointCloudMapper->SetInputConnection(reader->GetOutputPort());
+  this->PointCloudMapper->SetLookupTable(lookupTable);
   this->PointCloudActor->SetMapper(this->PointCloudMapper);
   this->PointCloudActor->GetProperty()->SetRepresentationToPoints();
   
@@ -264,10 +279,12 @@ void Form::on_actionOpenPointCloud_activated()
   this->RightRenderer->AddActor(this->PointCloudActor);
   this->RightRenderer->ResetCamera();
 
-  vtkSmartPointer<vtkPointPicker> pointPicker = 
-    vtkSmartPointer<vtkPointPicker>::New();
+  vtkSmartPointer<vtkPointPicker> pointPicker = vtkSmartPointer<vtkPointPicker>::New();
+  pointPicker->PickFromListOn();
+  pointPicker->AddPickList(this->PointCloudActor);
   this->qvtkWidgetRight->GetRenderWindow()->GetInteractor()->SetPicker(pointPicker);
   this->pointSelectionStyle3D = vtkSmartPointer<PointSelectionStyle3D>::New();
+  this->pointSelectionStyle3D->Data = reader->GetOutput();
   this->qvtkWidgetRight->GetRenderWindow()->GetInteractor()->SetInteractorStyle(pointSelectionStyle3D);
 
   
@@ -296,10 +313,10 @@ void Form::on_actionSaveImagePoints_activated()
  
   for(unsigned int i = 0; i < this->pointSelectionStyle2D->Numbers.size(); i++)
     {
-    double p[3];
-    this->pointSelectionStyle2D->Numbers[i]->GetPosition(p);
-  
-    fout << p[0] << " " << p[1] << std::endl;
+    //double p[3];
+    //this->pointSelectionStyle2D->Numbers[i]->GetPosition(p);
+    //fout << p[0] << " " << p[1] << std::endl;
+    fout << this->pointSelectionStyle2D->Coordinates[i].x << " " << this->pointSelectionStyle2D->Coordinates[i].y << std::endl;
  
     }
   fout.close();

@@ -19,16 +19,21 @@
 #include "PointSelectionStyle2D.h"
 
 #include <vtkAbstractPicker.h>
+#include <vtkActor2D.h>
 #include <vtkCoordinate.h>
 #include <vtkFollower.h>
 #include <vtkObjectFactory.h>
 #include <vtkPolyDataMapper.h>
+#include <vtkPolyDataMapper2D.h>
 #include <vtkProperty.h>
+#include <vtkProperty2D.h>
 #include <vtkRendererCollection.h>
 #include <vtkRenderWindow.h>
 #include <vtkRenderWindowInteractor.h>
 #include <vtkSmartPointer.h>
 #include <vtkSphereSource.h>
+#include <vtkTransform.h>
+#include <vtkTransformPolyDataFilter.h>
 #include <vtkVectorText.h>
 
 #include <sstream>
@@ -90,31 +95,37 @@ void PointSelectionStyle2D::OnRightButtonUp()
 
 void PointSelectionStyle2D::RemoveAllPoints()
 {
-  for(unsigned int i = 0; i < Numbers.size(); ++i)
+  for(unsigned int i = 0; i < Coordinates.size(); ++i)
     {
-    this->Interactor->GetRenderWindow()->GetRenderers()->GetFirstRenderer()->RemoveActor( Numbers[i]);
-    this->Interactor->GetRenderWindow()->GetRenderers()->GetFirstRenderer()->RemoveActor( Points[i]);
+    this->CurrentRenderer->RemoveViewProp( Numbers[i]);
+    this->CurrentRenderer->RemoveViewProp( Points[i]);
     }
   Numbers.clear();
   Points.clear();
+  Coordinates.clear();
 }
 
 
 void PointSelectionStyle2D::AddNumber(double p[3])
 {
-  p[0] = round(p[0]);
-  p[1] = round(p[1]);
+  Coord2D coord;
+  coord.x = p[0];
+  coord.y = p[1];
+  Coordinates.push_back(coord);
+  
+  p[0] = static_cast<int>( p[0] + 0.5 );
+  p[1] = static_cast<int>( p[1] + 0.5 );
   p[2] = 0;
   std::cout << "Adding marker at " << p[0] << " " << p[1] << " " << p[2] << std::endl;
   // Convert the current number to a string
   std::stringstream ss;
-  ss << Numbers.size();
+  ss << Coordinates.size();
 
   // Create the number
   // Create the text
   vtkSmartPointer<vtkVectorText> textSource = vtkSmartPointer<vtkVectorText>::New();
   textSource->SetText( ss.str().c_str() );
-
+/*
   // Create a mapper
   vtkSmartPointer<vtkPolyDataMapper> textMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
   textMapper->SetInputConnection( textSource->GetOutputPort() );
@@ -130,6 +141,34 @@ void PointSelectionStyle2D::AddNumber(double p[3])
 
   this->Numbers.push_back(textFollower);
   this->Interactor->GetRenderWindow()->GetRenderers()->GetFirstRenderer()->AddActor( textFollower );
+  */
+
+
+  //get the bounds of the text
+  textSource->Update();
+  double* bounds = textSource->GetOutput()->GetBounds();
+  //transform the polydata to be centered over the pick position
+  double center[3] = {0.5*(bounds[1]+bounds[0]), 0.5*(bounds[3]+bounds[2]), 0.0 };
+
+  vtkSmartPointer<vtkTransform> trans = vtkSmartPointer<vtkTransform>::New();
+  trans->Translate( -center[0], -center[1], 0 );
+  trans->Translate( p[0], p[1], 0 );
+
+  vtkSmartPointer<vtkTransformPolyDataFilter> tpd = vtkSmartPointer<vtkTransformPolyDataFilter>::New();
+  tpd->SetTransform( trans );
+  tpd->SetInputConnection(  textSource->GetOutputPort() );
+
+  // Create a mapper
+  vtkSmartPointer<vtkPolyDataMapper2D> mapper = vtkSmartPointer<vtkPolyDataMapper2D>::New();
+  vtkSmartPointer<vtkCoordinate> coordinate = vtkSmartPointer<vtkCoordinate>::New();
+  coordinate->SetCoordinateSystemToWorld();
+  mapper->SetTransformCoordinate( coordinate );
+  mapper->SetInputConnection( tpd->GetOutputPort() );
+
+  vtkSmartPointer<vtkActor2D> actor = vtkSmartPointer<vtkActor2D>::New();
+  actor->SetMapper( mapper );
+  actor->GetProperty()->SetColor( 1, 1, 0 ); // yellow
+  this->CurrentRenderer->AddViewProp( actor );
 
   // Create the dot
   // Create a sphere

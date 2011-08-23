@@ -21,6 +21,7 @@
 #include <vtkAbstractPicker.h>
 #include <vtkFollower.h>
 #include <vtkObjectFactory.h>
+#include <vtkPointPicker.h>
 #include <vtkPolyDataMapper.h>
 #include <vtkProperty.h>
 #include <vtkRendererCollection.h>
@@ -33,47 +34,78 @@
 #include <sstream>
 
 vtkStandardNewMacro(PointSelectionStyle3D);
- 
+
+PointSelectionStyle3D::PointSelectionStyle3D()
+{
+  // Create a sphere to use as the dot
+  this->DotSource = vtkSmartPointer<vtkSphereSource>::New();
+  this->DotSource->SetRadius(.05);
+  this->DotSource->Update();
+}
+  
 void PointSelectionStyle3D::OnLeftButtonDown() 
 {
   // Only select the point if control is held
   if(this->Interactor->GetControlKey())
     {
-
     //std::cout << "Picking pixel: " << this->Interactor->GetEventPosition()[0] << " " << this->Interactor->GetEventPosition()[1] << std::endl;
-    this->Interactor->GetPicker()->Pick(this->Interactor->GetEventPosition()[0],
+    //int success = vtkPointPicker::SafeDownCast(this->Interactor->GetPicker())->Pick(this->Interactor->GetEventPosition()[0],
+    vtkPointPicker::SafeDownCast(this->Interactor->GetPicker())->Pick(this->Interactor->GetEventPosition()[0],
             this->Interactor->GetEventPosition()[1],
             0,  // always zero.
-            this->Interactor->GetRenderWindow()->GetRenderers()->GetFirstRenderer());
-    double picked[3];
-    this->Interactor->GetPicker()->GetPickPosition(picked);
+            //this->Interactor->GetRenderWindow()->GetRenderers()->GetFirstRenderer());
+            this->CurrentRenderer);
+    //std::cout << "Success? " << success << std::endl;
+
+    if(vtkPointPicker::SafeDownCast(this->Interactor->GetPicker())->GetDataSet() != this->Data)
+      {
+      std::cerr << "Did not pick from the correct data set!" << std::endl;
+      }
+    /*
+    vtkIdType pointId = vtkPointPicker::SafeDownCast(this->Interactor->GetPicker())->GetPointId();
+    double p[3];
+    this->Data->GetPoint(pointId, p);
+    
+    //std::cout << "Picked point: " << pointId << std::endl;
+    //std::cout << "Point: " << pointId << " should have coordinate: " << p[0] << " " << p[1] << " " << p[2] << std::endl;
+    */
+    double picked[3] = {0,0,0};
+    
+    vtkPointPicker::SafeDownCast(this->Interactor->GetPicker())->GetPickPosition(picked);
     //std::cout << "Picked point with coordinate: " << picked[0] << " " << picked[1] << " " << picked[2] << std::endl;
 
     AddNumber(picked);
-    
-    
     }
-  
+
   // Forward events
   vtkInteractorStyleTrackballCamera::OnLeftButtonDown();
+
 }
 
 void PointSelectionStyle3D::RemoveAllPoints()
 {
-  for(unsigned int i = 0; i < Numbers.size(); ++i)
+  for(unsigned int i = 0; i < Coordinates.size(); ++i)
     {
-    this->Interactor->GetRenderWindow()->GetRenderers()->GetFirstRenderer()->RemoveActor( Numbers[i]);
-    this->Interactor->GetRenderWindow()->GetRenderers()->GetFirstRenderer()->RemoveActor( Points[i]);
+    this->CurrentRenderer->RemoveViewProp( Numbers[i]);
+    this->CurrentRenderer->RemoveViewProp( Points[i]);
     }
   Numbers.clear();
   Points.clear();
+  Coordinates.clear();
 }
 
 void PointSelectionStyle3D::AddNumber(double p[3])
 {
-  // Create the TEXT
+  std::cout << "Added 3D keypoint: " << p[0] << " " << p[1] << " " << p[2] << std::endl;
+  Coord3D coord;
+  coord.x = p[0];
+  coord.y = p[1];
+  coord.z = p[2];
+  Coordinates.push_back(coord);
+  
+  // Create the text
   std::stringstream ss;
-  ss << Numbers.size();
+  ss << Coordinates.size();
   vtkSmartPointer<vtkVectorText> textSource = vtkSmartPointer<vtkVectorText>::New();
   textSource->SetText( ss.str().c_str() );
 
@@ -84,30 +116,34 @@ void PointSelectionStyle3D::AddNumber(double p[3])
   // Create a subclass of vtkActor: a vtkFollower that remains facing the camera
   vtkSmartPointer<vtkFollower> follower = vtkSmartPointer<vtkFollower>::New();
   follower->SetMapper( mapper );
-  follower->SetCamera(this->Interactor->GetRenderWindow()->GetRenderers()->GetFirstRenderer()->GetActiveCamera());
+  follower->SetCamera(this->CurrentRenderer->GetActiveCamera());
   follower->SetPosition(p);
   follower->GetProperty()->SetColor( 1, 0, 0 ); // red
   follower->SetScale( .1, .1, .1 );
 
   this->Numbers.push_back(follower);
-  this->Interactor->GetRenderWindow()->GetRenderers()->GetFirstRenderer()->AddActor( follower );
-
+  this->CurrentRenderer->AddViewProp( follower );
+  
+  /*
+  // Create a blank follower just for testing
+  vtkSmartPointer<vtkFollower> follower = vtkSmartPointer<vtkFollower>::New();
+  this->Numbers.push_back(follower);
+  this->CurrentRenderer->AddViewProp( follower );
+  */
+  
   // Create the dot
-  // Create a sphere
-  vtkSmartPointer<vtkSphereSource> sphereSource = vtkSmartPointer<vtkSphereSource>::New();
-  sphereSource->SetRadius(.5);
-  sphereSource->SetCenter(p);
-  sphereSource->Update();
 
   // Create a mapper
   vtkSmartPointer<vtkPolyDataMapper> sphereMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
-  sphereMapper->SetInputConnection( sphereSource->GetOutputPort() );
+  sphereMapper->SetInputConnection( this->DotSource->GetOutputPort() );
 
   // Create a subclass of vtkActor: a vtkFollower that remains facing the camera
   vtkSmartPointer<vtkActor> sphereActor = vtkSmartPointer<vtkActor>::New();
   sphereActor->SetMapper( sphereMapper );
+  sphereActor->SetPosition(p);
   sphereActor->GetProperty()->SetColor( 1, 0, 0 ); // red
 
   this->Points.push_back(sphereActor);
-  this->Interactor->GetRenderWindow()->GetRenderers()->GetFirstRenderer()->AddActor( sphereActor );
+  this->CurrentRenderer->AddViewProp( sphereActor );
 }
+

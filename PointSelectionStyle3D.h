@@ -19,25 +19,38 @@
 #ifndef PointSelectionStyle3D_H
 #define PointSelectionStyle3D_H
 
+// VTK
 #include <vtkInteractorStyleTrackballCamera.h>
+#include <vtkSmartPointer.h>
+#include <vtkSphereSource.h>
 
+// STL
 #include <vector>
+
+// Custom
+#include "Coord.h"
 
 // Define interaction style
 class PointSelectionStyle3D : public vtkInteractorStyleTrackballCamera
 {
   public:
     static PointSelectionStyle3D* New();
+    PointSelectionStyle3D();
     vtkTypeMacro(PointSelectionStyle3D, vtkInteractorStyleTrackballCamera);
  
     void OnLeftButtonDown() ;
  
     std::vector<vtkActor*> Numbers;
     std::vector<vtkActor*> Points;
+    std::vector<Coord3D> Coordinates;
 
+    vtkSmartPointer<vtkSphereSource> DotSource;
+    
     void AddNumber(double p[3]);
 
     void RemoveAllPoints();
+
+    vtkPolyData* Data;
 };
 
 #endif

@@ -19,9 +19,14 @@
 #ifndef PointSelectionStyle2D_H
 #define PointSelectionStyle2D_H
 
+// VTK
 #include <vtkInteractorStyleImage.h>
 
+// STL
 #include <vector>
+
+// Custom
+#include "Coord.h"
 
 // Define interaction style
 class PointSelectionStyle2D : public vtkInteractorStyleImage
@@ -33,8 +38,9 @@ class PointSelectionStyle2D : public vtkInteractorStyleImage
     void OnLeftButtonDown();
     void OnRightButtonUp();
  
-    std::vector<vtkActor*> Numbers;
+    std::vector<vtkActor2D*> Numbers;
     std::vector<vtkActor*> Points;
+    std::vector<Coord2D> Coordinates;
 
     void AddNumber(double p[3]);
 

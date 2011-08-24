@@ -18,9 +18,15 @@
 
 #include "Helpers.h"
 
+// ITK
 #include "itkImageRegionIterator.h"
 #include "itkVectorMagnitudeImageFilter.h"
 #include "itkRescaleIntensityImageFilter.h"
+
+// VTK
+#include <vtkIdList.h>
+#include <vtkKdTree.h>
+#include <vtkMath.h>
 
 namespace Helpers
 {
@@ -122,6 +128,39 @@ void ITKImagetoVTKMagnitudeImage(FloatVectorImageType::Pointer image, vtkImageDa
 
     ++imageIterator;
     }
+}
+
+float ComputeAverageSpacing(vtkPoints* points)
+{
+  float sumOfDistances = 0.;
+  //Create the tree
+  vtkSmartPointer<vtkKdTree> pointTree = vtkSmartPointer<vtkKdTree>::New();
+  pointTree->BuildLocatorFromPoints(points);
+ 
+  for(vtkIdType i = 0; i < points->GetNumberOfPoints(); ++i)
+    {
+    // Get the coordinates of the current point
+    double queryPoint[3];
+    points->GetPoint(i,queryPoint);
+  
+    // Find the 2 closest points (the first closest will be exactly the query point)
+    vtkSmartPointer<vtkIdList> result = vtkSmartPointer<vtkIdList>::New();
+    pointTree->FindClosestNPoints(2, queryPoint, result);
+  
+    double closestPoint[3];
+    points->GetPoint(result->GetId(1), closestPoint);
+      
+    float squaredDistance = vtkMath::Distance2BetweenPoints(queryPoint, closestPoint);
+
+    // Take the square root to get the Euclidean distance between the points.
+    float distance = sqrt(squaredDistance);
+    
+    sumOfDistances += distance;
+    }
+    
+  float averageDistance = sumOfDistances / static_cast<float>(points->GetNumberOfPoints());
+  
+  return averageDistance;
 }
 
 } // end namespace

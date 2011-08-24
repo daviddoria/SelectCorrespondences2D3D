@@ -19,6 +19,7 @@
 #include "PointSelectionStyle3D.h"
 
 #include <vtkAbstractPicker.h>
+#include <vtkCamera.h>
 #include <vtkFollower.h>
 #include <vtkObjectFactory.h>
 #include <vtkPointPicker.h>
@@ -37,43 +38,60 @@ vtkStandardNewMacro(PointSelectionStyle3D);
 
 PointSelectionStyle3D::PointSelectionStyle3D()
 {
+  
+  this->MarkerRadius = .05;
+  
   // Create a sphere to use as the dot
   this->DotSource = vtkSmartPointer<vtkSphereSource>::New();
-  this->DotSource->SetRadius(.05);
+  this->DotSource->SetRadius(this->MarkerRadius);
+  this->DotSource->Update();
+  
+}
+
+void PointSelectionStyle3D::SetMarkerRadius(float radius)
+{
+  this->MarkerRadius = radius;
+  this->DotSource->SetRadius(this->MarkerRadius);
   this->DotSource->Update();
 }
-  
+
 void PointSelectionStyle3D::OnLeftButtonDown() 
 {
+  //std::cout << "Picking pixel: " << this->Interactor->GetEventPosition()[0] << " " << this->Interactor->GetEventPosition()[1] << std::endl;
+  //int success = vtkPointPicker::SafeDownCast(this->Interactor->GetPicker())->Pick(this->Interactor->GetEventPosition()[0],
+  vtkPointPicker::SafeDownCast(this->Interactor->GetPicker())->Pick(this->Interactor->GetEventPosition()[0],
+	  this->Interactor->GetEventPosition()[1],
+	  0,  // always zero.
+	  //this->Interactor->GetRenderWindow()->GetRenderers()->GetFirstRenderer());
+	  this->CurrentRenderer);
+  //std::cout << "Success? " << success << std::endl;
+
+  if(vtkPointPicker::SafeDownCast(this->Interactor->GetPicker())->GetDataSet() != this->Data)
+    {
+    std::cerr << "Did not pick from the correct data set!" << std::endl;
+    }
+  /*
+  vtkIdType pointId = vtkPointPicker::SafeDownCast(this->Interactor->GetPicker())->GetPointId();
+  double p[3];
+  this->Data->GetPoint(pointId, p);
+  
+  //std::cout << "Picked point: " << pointId << std::endl;
+  //std::cout << "Point: " << pointId << " should have coordinate: " << p[0] << " " << p[1] << " " << p[2] << std::endl;
+  */
+  double picked[3] = {0,0,0};
+  
+  vtkPointPicker::SafeDownCast(this->Interactor->GetPicker())->GetPickPosition(picked);
+  //std::cout << "Picked point with coordinate: " << picked[0] << " " << picked[1] << " " << picked[2] << std::endl;
+
+  
+  if(this->Interactor->GetShiftKey())
+    {
+    this->CurrentRenderer->GetActiveCamera()->SetFocalPoint(picked);
+    }
+
   // Only select the point if control is held
   if(this->Interactor->GetControlKey())
     {
-    //std::cout << "Picking pixel: " << this->Interactor->GetEventPosition()[0] << " " << this->Interactor->GetEventPosition()[1] << std::endl;
-    //int success = vtkPointPicker::SafeDownCast(this->Interactor->GetPicker())->Pick(this->Interactor->GetEventPosition()[0],
-    vtkPointPicker::SafeDownCast(this->Interactor->GetPicker())->Pick(this->Interactor->GetEventPosition()[0],
-            this->Interactor->GetEventPosition()[1],
-            0,  // always zero.
-            //this->Interactor->GetRenderWindow()->GetRenderers()->GetFirstRenderer());
-            this->CurrentRenderer);
-    //std::cout << "Success? " << success << std::endl;
-
-    if(vtkPointPicker::SafeDownCast(this->Interactor->GetPicker())->GetDataSet() != this->Data)
-      {
-      std::cerr << "Did not pick from the correct data set!" << std::endl;
-      }
-    /*
-    vtkIdType pointId = vtkPointPicker::SafeDownCast(this->Interactor->GetPicker())->GetPointId();
-    double p[3];
-    this->Data->GetPoint(pointId, p);
-    
-    //std::cout << "Picked point: " << pointId << std::endl;
-    //std::cout << "Point: " << pointId << " should have coordinate: " << p[0] << " " << p[1] << " " << p[2] << std::endl;
-    */
-    double picked[3] = {0,0,0};
-    
-    vtkPointPicker::SafeDownCast(this->Interactor->GetPicker())->GetPickPosition(picked);
-    //std::cout << "Picked point with coordinate: " << picked[0] << " " << picked[1] << " " << picked[2] << std::endl;
-
     AddNumber(picked);
     }
 

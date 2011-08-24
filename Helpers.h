@@ -26,8 +26,9 @@
 #include "itkImageRegionIterator.h"
 
 // VTK
-#include <vtkSmartPointer.h>
 #include <vtkImageData.h>
+#include <vtkPoints.h>
+#include <vtkSmartPointer.h>
 
 // Custom
 #include "Types.h"
@@ -38,6 +39,7 @@ namespace Helpers
 void ITKImagetoVTKImage(FloatVectorImageType::Pointer image, vtkImageData* outputImage); // This function simply drives ITKImagetoVTKRGBImage or ITKImagetoVTKMagnitudeImage
 void ITKImagetoVTKRGBImage(FloatVectorImageType::Pointer image, vtkImageData* outputImage);
 void ITKImagetoVTKMagnitudeImage(FloatVectorImageType::Pointer image, vtkImageData* outputImage);
+float ComputeAverageSpacing(vtkPoints* points);
 
 template<typename TImage>
 void DeepCopyScalarImage(typename TImage::Pointer input, typename TImage::Pointer output)

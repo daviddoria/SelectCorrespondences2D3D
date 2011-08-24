@@ -65,11 +65,18 @@
 void Form::on_actionHelp_activated()
 {
   QTextEdit* help=new QTextEdit();
-  //help->setWindowFlag(Qt::Window); //or Qt::Tool, Qt::Dialog if you like
+  
   help->setReadOnly(true);
-  help->append("<h1>Image keypoints</h1>Hold the right mouse button and drag to zoom in and out. <br/>Hold the middle mouse button and drag to pan the image. <br/>Click the left mouse button to select a keypoint.<br/> <p/>\
-  <h1>Point cloud keypoints</h1> Hold the left mouse button and drag to rotate the scene.<br/> Hold the right mouse button and drag to zoom in and out. Hold the middle mouse button and drag to pan the scene. While holding control (CTRL), click the left mouse button to select a keypoint.\
-  <h1>Saving keypoints</h1> The same number of keypoints must be selected in both the image and the point cloud before the points can be saved."
+  help->append("<h1>Image keypoints</h1>\
+  Hold the right mouse button and drag to zoom in and out. <br/>\
+  Hold the middle mouse button and drag to pan the image. <br/>\
+  Click the left mouse button to select a keypoint.<br/> <p/>\
+  <h1>Point cloud keypoints</h1>\
+  Hold the left mouse button and drag to rotate the scene.<br/>\
+  Hold the right mouse button and drag to zoom in and out. Hold the middle mouse button and drag to pan the scene. While holding control (CTRL), click the left mouse button to select a keypoint.<br/>\
+  If you need to zoom in farther, hold shift while left clicking a point to change the camera's focal point to that point. You can reset the focal point by pressing 'r'.\
+  <h1>Saving keypoints</h1>\
+  The same number of keypoints must be selected in both the image and the point cloud before the points can be saved."
   );
   help->show();
 }
@@ -309,10 +316,11 @@ void Form::on_actionOpenPointCloud_activated()
   this->pointSelectionStyle3D->SetCurrentRenderer(this->RightRenderer);
   this->pointSelectionStyle3D->Data = reader->GetOutput();
   this->qvtkWidgetRight->GetRenderWindow()->GetInteractor()->SetInteractorStyle(pointSelectionStyle3D);
-
   
   this->RightRenderer->ResetCamera();
 
+  float averageSpacing = Helpers::ComputeAverageSpacing(reader->GetOutput()->GetPoints());
+  this->pointSelectionStyle3D->SetMarkerRadius(averageSpacing);
 }
 
 void Form::on_actionSaveImagePoints_activated()

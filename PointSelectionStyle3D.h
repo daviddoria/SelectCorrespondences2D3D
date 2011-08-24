@@ -51,6 +51,12 @@ class PointSelectionStyle3D : public vtkInteractorStyleTrackballCamera
     void RemoveAllPoints();
 
     vtkPolyData* Data;
+    
+    void SetMarkerRadius(float radius);
+    
+  private:
+    float MarkerRadius;
+  
 };
 
 #endif

@@ -49,7 +49,7 @@ void PointSelectionStyle2D::OnLeftButtonDown()
 		      this->Interactor->GetEventPosition()[1], 
 		      0,  // always zero.
                       this->CurrentRenderer);
-		      //this->Interactor->GetRenderWindow()->GetRenderers()->GetFirstRenderer());
+
   double picked[3];
   this->Interactor->GetPicker()->GetPickPosition(picked);
   //std::cout << "Picked point with coordinate: " << picked[0] << " " << picked[1] << " " << picked[2] << std::endl;
@@ -58,19 +58,6 @@ void PointSelectionStyle2D::OnLeftButtonDown()
  
   // Forward events
   vtkInteractorStyleImage::OnLeftButtonDown();
-}
-
-void PointSelectionStyle2D::RefreshNumbers()
-{
-  this->Interactor->GetRenderWindow()->Render();
-}
-
-void PointSelectionStyle2D::OnRightButtonUp()
-{
-  RefreshNumbers();
-  
-  // Forward events
-  vtkInteractorStyleImage::OnRightButtonUp();
 }
 
 void PointSelectionStyle2D::RemoveAllPoints()
@@ -88,6 +75,10 @@ void PointSelectionStyle2D::RemoveAllPoints()
 
 void PointSelectionStyle2D::AddNumber(double p[3])
 {
+  // Convert the current number to a string
+  std::stringstream ss;
+  ss << Coordinates.size();
+  
   Coord2D coord;
   coord.x = p[0];
   coord.y = p[1];
@@ -97,9 +88,6 @@ void PointSelectionStyle2D::AddNumber(double p[3])
   p[1] = static_cast<int>( p[1] + 0.5 );
   p[2] = 0;
   std::cout << "Adding marker at " << p[0] << " " << p[1] << " " << p[2] << std::endl;
-  // Convert the current number to a string
-  std::stringstream ss;
-  ss << Coordinates.size();
 
   // Create the number
   // Create the text
@@ -133,6 +121,4 @@ void PointSelectionStyle2D::AddNumber(double p[3])
   this->Points.push_back(sphereActor);
   //this->Interactor->GetRenderWindow()->GetRenderers()->GetFirstRenderer()->AddActor( sphereActor );
   this->CurrentRenderer->AddViewProp( sphereActor );
-
-  RefreshNumbers();
 }

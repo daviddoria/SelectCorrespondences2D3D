@@ -62,7 +62,6 @@ void PointSelectionStyle3D::OnLeftButtonDown()
   vtkPointPicker::SafeDownCast(this->Interactor->GetPicker())->Pick(this->Interactor->GetEventPosition()[0],
 	  this->Interactor->GetEventPosition()[1],
 	  0,  // always zero.
-	  //this->Interactor->GetRenderWindow()->GetRenderers()->GetFirstRenderer());
 	  this->CurrentRenderer);
   //std::cout << "Success? " << success << std::endl;
 
@@ -114,6 +113,10 @@ void PointSelectionStyle3D::RemoveAllPoints()
 
 void PointSelectionStyle3D::AddNumber(double p[3])
 {
+  // Create the text
+  std::stringstream ss;
+  ss << Coordinates.size();
+  
   std::cout << "Added 3D keypoint: " << p[0] << " " << p[1] << " " << p[2] << std::endl;
   Coord3D coord;
   coord.x = p[0];
@@ -121,9 +124,6 @@ void PointSelectionStyle3D::AddNumber(double p[3])
   coord.z = p[2];
   Coordinates.push_back(coord);
   
-  // Create the text
-  std::stringstream ss;
-  ss << Coordinates.size();
   vtkSmartPointer<vtkVectorText> textSource = vtkSmartPointer<vtkVectorText>::New();
   textSource->SetText( ss.str().c_str() );
 

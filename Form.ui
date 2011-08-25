@@ -18,7 +18,7 @@
     <item row="3" column="0">
      <widget class="QCheckBox" name="chkRGB">
       <property name="text">
-       <string>Interpret images as RGB</string>
+       <string>Interpret image as RGB</string>
       </property>
       <property name="checked">
        <bool>true</bool>
@@ -146,7 +146,7 @@
     <string>toolBar</string>
    </property>
    <attribute name="toolBarArea">
-    <enum>TopToolBarArea</enum>
+    <enum>LeftToolBarArea</enum>
    </attribute>
    <attribute name="toolBarBreak">
     <bool>false</bool>
@@ -154,16 +154,10 @@
   </widget>
   <widget class="QToolBar" name="toolBar_pointcloud">
    <property name="windowTitle">
-    <string>toolBar_2</string>
-   </property>
-   <property name="movable">
-    <bool>false</bool>
-   </property>
-   <property name="floatable">
-    <bool>false</bool>
+    <string>toolBar</string>
    </property>
    <attribute name="toolBarArea">
-    <enum>TopToolBarArea</enum>
+    <enum>RightToolBarArea</enum>
    </attribute>
    <attribute name="toolBarBreak">
     <bool>false</bool>

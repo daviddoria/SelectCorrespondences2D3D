@@ -106,30 +106,31 @@ Form::Form()
   this->PointCloudMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
   this->PointCloud = vtkSmartPointer<vtkPolyData>::New();
 
-  // Setup toolbar
-  // Open file buttons
+  // Setup icons
   QIcon openIcon = QIcon::fromTheme("document-open");
+  QIcon saveIcon = QIcon::fromTheme("document-save");
+  
+  // Setup image toolbar
   actionOpenImage->setIcon(openIcon);
   this->toolBar_image->addAction(actionOpenImage);
 
-  actionOpenPointCloud->setIcon(openIcon);
-  this->toolBar_pointcloud->addAction(actionOpenPointCloud);
-
-  // Save buttons
-  QIcon saveIcon = QIcon::fromTheme("document-save");
   actionSaveImagePoints->setIcon(saveIcon);
   this->toolBar_image->addAction(actionSaveImagePoints);
+
+  actionLoad2DPoints->setIcon(openIcon);
+  this->toolBar_image->addAction(actionLoad2DPoints);
+  
+  // Setup pointcloud toolbar
+  actionOpenPointCloud->setIcon(openIcon);
+  this->toolBar_pointcloud->addAction(actionOpenPointCloud);
 
   actionSavePointCloudPoints->setIcon(saveIcon);
   this->toolBar_pointcloud->addAction(actionSavePointCloudPoints);
 
-  // Open points buttons
-  actionLoad2DPoints->setIcon(openIcon);
-  this->toolBar_image->addAction(actionLoad2DPoints);
-
   actionLoad3DPoints->setIcon(openIcon);
   this->toolBar_pointcloud->addAction(actionLoad3DPoints);
 
+  // Initializations
   this->pointSelectionStyle2D = NULL;
   this->pointSelectionStyle3D = NULL;
 };
@@ -334,7 +335,7 @@ void Form::on_actionSaveImagePoints_activated()
   if(this->pointSelectionStyle2D->Numbers.size() !=
      this->pointSelectionStyle3D->Numbers.size())
   {
-    std::cerr << "The number of fixed seeds must match the number of moving seeds!" << std::endl;
+    std::cerr << "The number of image correspondences must match the number of point cloud correspondences!" << std::endl;
     return;
   }
   
@@ -370,7 +371,7 @@ void Form::on_actionSavePointCloudPoints_activated()
   if(this->pointSelectionStyle2D->Numbers.size() !=
      this->pointSelectionStyle3D->Numbers.size())
   {
-    std::cerr << "The number of fixed seeds must match the number of moving seeds!" << std::endl;
+    std::cerr << "The number of image correspondences must match the number of point cloud correspondences!" << std::endl;
     return;
   }
   
